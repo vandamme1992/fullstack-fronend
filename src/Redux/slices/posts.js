@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../axios";
 
 export const fetchPosts = createAsyncThunk("posts/fetchPosts", async () => {
-  const { data } = await axios.get("/posts");
+  const { data } = await axios.get("/");
   return data;
 });
 
@@ -14,6 +14,16 @@ export const fetchTags = createAsyncThunk("posts/fetchTags", async () => {
 export const fetchRemovePost = createAsyncThunk(
   "posts/fetchRemovePost",
   async (id) => axios.delete(`/posts/${id}`)
+);
+
+export const fetchSortPost = createAsyncThunk(
+  "posts/fetchSortPost",
+  async ({ sortBy, sortOrder }) => {
+    const { data } = await axios.get(
+      `/?sortBy=${sortBy}&sortOrder=${sortOrder}`
+    );
+    return data;
+  }
 );
 
 const initialState = {
@@ -68,6 +78,19 @@ const postsSlice = createSlice({
       );
     },
     [fetchRemovePost.rejected]: (state) => {
+      state.posts.status = "error";
+    },
+
+    //Сортировка постов
+    [fetchSortPost.pending]: (state) => {
+      state.posts.items = [];
+    },
+    [fetchSortPost.fulfilled]: (state, action) => {
+      console.log("payload", action.payload);
+      state.posts.items = action.payload;
+      state.posts.status = "loaded";
+    },
+    [fetchSortPost.rejected]: (state) => {
       state.posts.status = "error";
     },
   },

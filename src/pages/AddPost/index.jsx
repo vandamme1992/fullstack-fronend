@@ -6,12 +6,13 @@ import SimpleMDE from "react-simplemde-editor";
 
 import "easymde/dist/easymde.min.css";
 import styles from "./AddPost.module.scss";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectIsAuth } from "../../Redux/slices/auth";
 import axios from "../../axios";
 
 export const AddPost = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const isAuth = useSelector(selectIsAuth);
   const [text, setText] = React.useState("");
@@ -20,6 +21,7 @@ export const AddPost = () => {
   const [tags, setTags] = React.useState("");
   const [imageUrl, setImageUrl] = React.useState("");
   const inputFileRef = React.useRef(null);
+  const isEditing = Boolean(id);
 
   //Проверяет если ли изменения в инпуте(тут только для загрузки фото)
   const handleChangeFile = async (event) => {
@@ -55,14 +57,36 @@ export const AddPost = () => {
         tags,
       };
       //передаем данные на бекенд
-      const { data } = await axios.post("posts", fields);
-      const id = data._id;
-      navigate(`/posts/${id}`);
+      const { data } = isEditing
+        ? //Перенаправляем данные
+          await axios.patch(`/posts/${id}`, fields)
+        : await axios.post("posts", fields);
+
+      const _id = isEditing ? id : data._id;
+      navigate(`/posts/${_id}`);
     } catch (err) {
       console.warn(err);
       alert("Ошбика при создании статьи!");
     }
   };
+
+  //Редактирование статьи
+  React.useEffect(() => {
+    if (id) {
+      axios
+        .get(`/posts/${id}`)
+        .then(({ data }) => {
+          setTitle(data.title);
+          setText(data.text);
+          setImageUrl(data.imageUrl);
+          setTags(data.tags.join(","));
+        })
+        .catch((err) => {
+          console.warn(err);
+          alert("Ошбика при получении статьи");
+        });
+    }
+  }, []);
 
   const options = React.useMemo(
     () => ({
@@ -141,7 +165,7 @@ export const AddPost = () => {
       />
       <div className={styles.buttons}>
         <Button onClick={() => onSubmit()} size="large" variant="contained">
-          Опубликовать
+          {isEditing ? "Сохранить" : "Опубликовать"}
         </Button>
         <Link to="/">
           <Button size="large">Отмена</Button>
