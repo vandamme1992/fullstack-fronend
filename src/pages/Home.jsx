@@ -6,29 +6,46 @@ import Grid from "@mui/material/Grid";
 import { Post } from "../components/Post";
 import { TagsBlock } from "../components/TagsBlock";
 import { CommentsBlock } from "../components/CommentsBlock";
-import { fetchPosts, fetchTags } from "../Redux/slices/posts";
+import { fetchPosts, fetchSortPost, fetchTags } from "../Redux/slices/posts";
 
 export const Home = () => {
   const dispatch = useDispatch();
   const { posts, tags } = useSelector((state) => state.posts);
   const userData = useSelector((state) => state.auth.data);
-
   const isPostsLoading = posts.status === "loading";
   const isTagsLoading = tags.status === "loading";
+  const [activeTab, setActiveTab] = React.useState("");
+
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
 
   React.useEffect(() => {
     dispatch(fetchPosts());
+    // dispatch(fetchSortPost());
     dispatch(fetchTags());
   }, []);
+
   return (
     <>
       <Tabs
         style={{ marginBottom: 15 }}
-        value={0}
+        value={activeTab}
+        onChange={handleTabChange}
         aria-label="basic tabs example"
       >
-        <Tab label="Новые" />
-        <Tab label="Популярные" />
+        <Tab
+          label="Новые"
+          onClick={() =>
+            dispatch(fetchSortPost({ sortBy: "createdAt", sortOrder: "DESC" }))
+          }
+        />
+        <Tab
+          label="Популярные"
+          onClick={() =>
+            dispatch(fetchSortPost({ sortBy: "viewsCount", sortOrder: "DESC" }))
+          }
+        />
       </Tabs>
       <Grid container spacing={4}>
         <Grid xs={8} item>
